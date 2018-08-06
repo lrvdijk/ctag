@@ -3,6 +3,8 @@ package nl.tudelft.pl2.data.storage.writers
 import java.io.File
 import java.nio.file.Paths
 
+import scala.collection.mutable.Map;
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 

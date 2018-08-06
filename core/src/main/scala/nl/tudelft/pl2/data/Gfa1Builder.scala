@@ -143,8 +143,6 @@ object Gfa1Builder {
     stringBuilder.append(node.name)
     stringBuilder.append(DEFAULT_DELIMITER)
     stringBuilder.append(node.content)
-    stringBuilder.append(DEFAULT_DELIMITER)
-    stringBuilder.append('*')
     node.options.foreach((option: (String, (Char, String))) => {
       stringBuilder.append(DEFAULT_DELIMITER)
       stringBuilder.append(option._1)

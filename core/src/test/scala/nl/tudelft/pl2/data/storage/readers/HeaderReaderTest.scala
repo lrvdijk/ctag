@@ -20,8 +20,8 @@ class HeaderReaderTest extends FunSuite with BeforeAndAfter {
 
 
   private val PATH = Paths.get(TEMP.getAbsolutePath)
-  private val SINGLE_OPTION = Map("A" -> ('B', "C"))
-  private val DOUBLE_OPTION = Map("A1" -> ('B', "C1"), "A2" -> ('B', "C2"))
+  private val SINGLE_OPTION = mutable.Map("A" -> ('B', "C"))
+  private val DOUBLE_OPTION = mutable.Map("A1" -> ('B', "C1"), "A2" -> ('B', "C2"))
   private val SINGLE_OPT_LEN = 10
   private val DOUBLE_OPT_LEN = 21
 

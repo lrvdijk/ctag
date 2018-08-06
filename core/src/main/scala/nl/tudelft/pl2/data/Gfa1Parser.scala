@@ -10,6 +10,8 @@ import nl.tudelft.pl2.data.AssertionHelper.assertAndThrow
 import nl.tudelft.pl2.representation.graph.LoadingState
 import org.apache.logging.log4j.LogManager
 
+import scala.collection.mutable
+
 /**
   * An exception used to clarify something went wrong
   * during parsing. Most often this includes some syntactical
@@ -42,6 +44,7 @@ case class Gfa1ParseException(msg: String,
   * graphs of interest.
   *
   * @author Chris Lemaire
+  * @author Lucas van Dijk
   */
 object Gfa1Parser {
   /**
@@ -56,13 +59,18 @@ object Gfa1Parser {
 
   private final val SEG_NAME_COL = 1
   private final val SEG_CONTENT_COL = 2
-  private final val SEG_OPTIONS_COL = 4
+  private final val SEG_OPTIONS_COL = 3
 
   private final val LINK_FROM_COL = 1
   private final val LINK_FROM_REV_COL = 2
   private final val LINK_TO_COL = 3
   private final val LINK_TO_REV_COL = 4
   private final val LINK_OPTIONS_COL = 6
+
+  private final val PATH_NAME_COL = 1
+  private final val PATH_SEGMENTS_COL = 2
+  private final val PATH_OVERLAPS_COL = 3
+
 
   /**
     * The amount of milestones while loading.
@@ -122,7 +130,9 @@ object Gfa1Parser {
             parseOptionals(lineSplit, HEADER_OPTIONS_COL))
           case "S" => parseSegment(builder, lineSplit)
           case "L" => parseLink(builder, lineSplit)
+          case "P" => parsePath(builder, lineSplit)
           case "#" => // A comment, don't do anything
+          case "C" => // Containment, ignore
           case _ => throw Gfa1ParseException(
             s"Unrecognized line type '${lineSplit(TYPE_COL)}'\n" +
               s"for line: $line", lineSplit)
@@ -145,6 +155,7 @@ object Gfa1Parser {
     */
   private def parseOption(option: String): (String, (Char, String)) = {
     val optionSplit = option.split(OPTION_DELIMITER)
+    printf("Option: %s", option)
     (optionSplit(0), (optionSplit(1)(0), optionSplit(2)))
   }
 
@@ -161,7 +172,7 @@ object Gfa1Parser {
     */
   private def parseOptionals(split: Array[String],
                              from: Int): Options = {
-    split.drop(from).map(parseOption).toMap
+    mutable.Map[String, (Char, String)](split.drop(from).map(parseOption): _*)
   }
 
   /**
@@ -211,5 +222,21 @@ object Gfa1Parser {
       to = split(LINK_TO_COL),
       reversedTo = split(LINK_TO_REV_COL)(0) == '-',
       options = parseOptionals(split, LINK_OPTIONS_COL))
+  }
+
+  /**
+    * Parse a path through the graph, denoted as a "P" line in a GFA file.
+    *
+    * @param split
+    */
+  private def parsePath(builder: ZeroZoomBuilder, split: Array[String]): Unit = {
+    assertAndThrow(split.length >= PATH_OVERLAPS_COL, Gfa1ParseException(
+      s"Path line has too few columns: expected at least ${PATH_OVERLAPS_COL+1} columns, but got ${split.length}",
+      split)
+    )
+
+    val nodes: Array[String] = split(PATH_SEGMENTS_COL).split(',').map(e => e.substring(0, e.length - 1))
+
+    builder.registerPath(split(PATH_NAME_COL), nodes)
   }
 }

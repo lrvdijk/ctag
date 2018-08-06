@@ -5,14 +5,13 @@ import java.util.Observer
 import java.util.logging.Logger
 
 import nl.tudelft.pl2.data.Gfa1Parser
-import nl.tudelft.pl2.data.Graph.{Coordinates, Options}
+import nl.tudelft.pl2.data.Graph.Options
 import nl.tudelft.pl2.data.caches.SubCache
 import nl.tudelft.pl2.data.indexing.Indexer
 import nl.tudelft.pl2.data.loaders.GraphPathCollection
 import nl.tudelft.pl2.data.storage.writers.{CtagWriter, HeaderWriter, HeatMapWriter}
 import nl.tudelft.pl2.representation.exceptions.CTagException
 import nl.tudelft.pl2.representation.external.{Edge, Node}
-import nl.tudelft.pl2.representation.ui.InfoSidePanel.SampleSelectionController
 import org.apache.logging.log4j.LogManager
 
 import scala.collection.mutable
@@ -24,6 +23,11 @@ case class EmptyBuildNodeException(reason: String, loc: String)
 
 case class EmptyGraphException(reason: String, loc: String)
   extends CTagException(reason, loc)
+
+
+case class InvalidGraphException(reason: String, loc: String)
+  extends CTagException(reason, loc)
+
 
 /**
   * Builds the files needed for 0th semantic zoom level.
@@ -59,40 +63,33 @@ class ZeroZoomBuilder(paths: GraphPathCollection) {
   private val heatMapWriter = new HeatMapWriter(paths.heatMapPath)
 
   /**
-    * Maps [[Node]] names to their ID and layer.
-    */
-  private val nameToNodeDat = new mutable.TreeMap[String, (Int, Int)]()
-
-  /**
     * Points from to to from.
     */
   private val incomingMap = new mutable.HashMap[Int, mutable.Set[Int]]
     with mutable.MultiMap[Int, Int]
 
-  /**
-    * The [[Node]] currently being built.
-    */
-  private var nodeBeingBuilt: Option[BuilderNode] = None
 
   /**
-    * Currently registering links from this [[Node]].
+    * A map which converts a node name (as string) to the corresponding
+    * [[BuilderNode]] object.
     */
-  private var registeringLinksFromNode = ""
+  private val nodeMap = new mutable.HashMap[String, BuilderNode]
 
   /**
-    * The index of the current [[Node]].
+    * A map that converts a node ID (int) to the corresponding BuilderNode
     */
-  private var nodeIndex: Int = 0
+  private val nodeIdMap = new mutable.HashMap[Int, BuilderNode]
+
+  /**
+    * Store each path registered, such that we can calculate genome
+    * positions when all nodes have been parsed.
+    */
+  private val graphPaths = new mutable.HashMap[String, Array[String]]
 
   /**
     * The mapping of genomes to their indices, or identifiers.
     */
   private val genomes: mutable.Map[String, Int] = mutable.HashMap[String, Int]()
-
-  /**
-    * The mapping of genome IDs to their respective current coordinate.
-    */
-  private val genomeCoordinates: mutable.Map[Int, Long] = mutable.HashMap[Int, Long]()
 
   /**
     * Passes a header from to the [[HeaderWriter]] to be
@@ -102,22 +99,7 @@ class ZeroZoomBuilder(paths: GraphPathCollection) {
     */
   def registerHeader(options: Options): Unit = {
     headerWriter.storeHeader(options)
-
-    options.filterKeys(_ == "ORI").foreach(pair => {
-      genomes ++= pair._2._2.split(';').zipWithIndex
-      genomeCoordinates ++= genomes.values.map(i => (i, 0L))
-    })
   }
-
-  private def getGenomes(options: Options): Array[Int] =
-    options.getOrElse(SampleSelectionController.GENOME_TAG, (' ', ""))._2
-      .split(';').filterNot(_.isEmpty).map(s => {
-      if (s forall Character.isDigit) {
-        s.toInt
-      } else {
-        genomes(s)
-      }
-    })
 
   /**
     * Builds a [[Node]] with [[Edge]] references to be
@@ -128,53 +110,24 @@ class ZeroZoomBuilder(paths: GraphPathCollection) {
     * @param options The [[Options]] that apply to this [[Node]].
     */
   def registerNode(name: String, content: String, options: Options): Unit = {
-    registerCurrentNode()
-    if (nameToNodeDat.contains(registeringLinksFromNode)) {
-      nameToNodeDat.remove(registeringLinksFromNode)
-    }
+    if (nodeMap.contains(name)) {
+      val node = nodeMap(name)
 
-    val (id, layer) = if (nameToNodeDat.contains(name)) {
-      nameToNodeDat(name)
+      node.content = content
+      node.options ++= options
     } else {
-      nameToNodeDat.put(name, (nodeIndex, 0))
-      nodeIndex += 1
-      nameToNodeDat(name)
+      val id = nodeMap.size
+
+      // Actual layer will be determined when all edges are parsed.
+      // Genome coordinates will be determined when registering a Path
+      val layer = 0
+      nodeMap.put(name, new BuilderNode(
+        id, name, layer, content, mutable.Buffer[Int](),
+        mutable.Buffer[Int](), options, new mutable.HashMap[Int, Long]
+      ))
+      nodeIdMap.put(nodeMap(name).id, nodeMap(name))
     }
-
-    val nodeGenomes = getGenomes(options)
-
-    nodeBeingBuilt = Some(new BuilderNode(id, name, layer, content,
-      incomingMap.getOrElse(id, mutable.Set[Int]()).toBuffer, mutable.Buffer[Int](),
-      options, nodeGenomes.map(gen => (new Integer(gen), genomeCoordinates.apply
-      (gen))).toMap))
-
-    incomingMap.remove(id)
-    nodeGenomes.foreach(gen => genomeCoordinates(gen) += content.length)
   }
-
-  /**
-    * Stores the current node being built, ending the building
-    * of that node. Also calls the indexNode method for the
-    * indexer to ensure the node gets indexed.
-    */
-  private def registerCurrentNode(): Unit =
-    if (nodeBeingBuilt.isDefined) {
-      val builtNode = nodeBeingBuilt.get
-      val nodeLen = zoomWriter.storeNode(
-        builtNode.id,
-        builtNode.name,
-        builtNode.layer,
-        builtNode.content,
-        builtNode.incoming,
-        builtNode.outgoing,
-        builtNode.options,
-        builtNode.genomes)
-
-      indexer.indexNode(builtNode.id, nodeLen, builtNode.layer)
-      builtNode.outgoing.foreach(e => incomingMap.addBinding(e, builtNode.id))
-      heatMapWriter.incrementLayerAt(builtNode.layer)
-      nodeBeingBuilt = None: Option[BuilderNode]
-    }
 
   /**
     * Adds a reference to the [[Edge]] to the [[Node]] currently
@@ -191,26 +144,172 @@ class ZeroZoomBuilder(paths: GraphPathCollection) {
                    to: String,
                    reversedTo: Boolean,
                    options: Options): Unit = {
-    registeringLinksFromNode = from
-    val (fromId, fromLayer) = nameToNodeDat(from)
-    var layer = -1
-    if (nameToNodeDat.contains(to)) {
-      val (toId, toLayer) = nameToNodeDat(to)
-      layer = Math.max(toLayer, fromLayer + 1)
-      nameToNodeDat.put(to, (toId, layer))
+    val nodeFrom: BuilderNode = if(nodeMap.contains(from)) {
+      nodeMap(from)
     } else {
-      layer = fromLayer + 1
-      nameToNodeDat.put(to, (nodeIndex, layer))
-      nodeIndex += 1
+      val id = nodeMap.size
+      val newNode = new BuilderNode(
+        id, from, 0, "", mutable.Buffer[Int](), mutable.Buffer[Int](),
+        new mutable.HashMap[String, (Char, String)], new mutable.HashMap[Int, Long]
+      )
+      nodeMap(from) = newNode
+      nodeIdMap(newNode.id) = newNode
+
+      newNode
     }
 
-    val node = nodeBeingBuilt.getOrElse(
-      throw EmptyBuildNodeException("You tried adding links to an empty BuilderNode.",
-        "In ZeroZoomBuilder."))
+    val nodeTo: BuilderNode = if(nodeMap.contains(to)) {
+      nodeMap(to)
+    } else {
+      val id = nodeMap.size
+      val newNode = new BuilderNode(
+        id, from, 0, "", mutable.Buffer[Int](), mutable.Buffer[Int](),
+        new mutable.HashMap[String, (Char, String)], new mutable.HashMap[Int, Long]
+      )
+      nodeMap(to) = newNode
+      nodeIdMap(newNode.id) = newNode
 
-    assert(fromId == node.id)
+      newNode
+    }
 
-    node.outgoing += nameToNodeDat(to)._1
+    nodeFrom.outgoing += nodeTo.id
+    nodeTo.incoming += nodeFrom.id
+  }
+
+  def registerPath(name: String, nodes: Array[String]): Unit = {
+    graphPaths(name) = nodes
+  }
+
+  /**
+    * Perform topological sorting to assign a layer to each node.
+    */
+  private def assignLayers(): Unit = {
+    // First find nodes without incoming edges, these nodes
+    // will start in layer 0.
+    var queue = Array[BuilderNode]()
+    val indegreeMap = mutable.Map[Int, Int](
+      nodeMap.values.toSeq.map(n => (n.id, n.incoming.size)).filter(e => e._2 > 0): _*)
+
+    var i = 0
+    nodeMap foreach { case (nodeName, node) =>
+      if(node.incoming.isEmpty) {
+        node.layer = 0
+        queue :+= node
+
+        LOGGER.debug(".. node {} (id: {}), layer 0", i, node.id)
+        i += 1
+      }
+    }
+
+    LOGGER.debug("Start topological sort... (queue size: {})", queue.size)
+    while(queue.nonEmpty) {
+      val node = queue.head
+      queue = queue.tail
+      LOGGER.debug("Current node: {}, queue size: {}", node, queue.size)
+
+      for(target <- nodeIdMap(node.id).outgoing) {
+        val targetNode: BuilderNode = nodeIdMap(target)
+        if(!indegreeMap.contains(targetNode.id)) {
+          throw InvalidGraphException("Graph is not acyclic, can't determine layers.",
+            "ZeroZoomBuilder::assignLayers")
+        }
+        indegreeMap(targetNode.id) -= 1
+
+        targetNode.layer = Math.max(targetNode.layer, node.layer + 1)
+        LOGGER.debug(".. node {} (id: {}), layer {}", i, targetNode.id, targetNode.layer)
+        i += 1
+
+        if(indegreeMap(targetNode.id) == 0) {
+          queue :+= targetNode
+          indegreeMap.remove(targetNode.id)
+        }
+      }
+    }
+
+    if(indegreeMap.nonEmpty) {
+      LOGGER.warn("Still elements in `indegreeMap`, graph is not acyclic.")
+    }
+  }
+
+  private def assignGenomes(): Unit = {
+    graphPaths foreach { case (path_name, nodes) =>
+      val genomeId = genomes.size
+      genomes(path_name) = genomeId
+      var coord: Long = 0
+
+      for(nodeName <- nodes) {
+        val node = nodeMap(nodeName)
+
+        node.genomes(genomeId) = coord
+        coord += node.content.length
+      }
+    }
+
+    // Create a fake header line which indicates the genomes present
+    // Required for subsequent builders and other parts of the program
+    if(graphPaths.nonEmpty) {
+      val genomeHeader = mutable.Map("H" -> ('Z', graphPaths.keys.mkString(";")))
+      registerHeader(genomeHeader)
+    }
+  }
+
+  /**
+    * Index all nodes in topological order such that nodes that are
+    * placed closely together are in the same chunk.
+    */
+  private def writeIndex(): Unit = {
+    var queue = Array[BuilderNode]()
+    val indegreeMap = mutable.Map[Int, Int](
+      nodeMap.values.toSeq.map(n => (n.id, n.incoming.size)).filter(e => e._2 > 0): _*)
+
+    nodeMap foreach { case (nodeName, node) =>
+      if(node.incoming.isEmpty) {
+        writeNode(node)
+        queue :+= node
+      }
+    }
+
+    LOGGER.debug("Start topological sort for indexing...")
+    while(queue.nonEmpty) {
+      val node = queue.head
+      queue = queue.tail
+
+      for(target <- nodeIdMap(node.id).outgoing) {
+        val targetNode: BuilderNode = nodeIdMap(target)
+
+        if(!indegreeMap.contains(targetNode.id)) {
+          throw InvalidGraphException("Graph is not acyclic, can't determine layers.",
+            "ZeroZoomBuilder::assignLayers")
+        }
+        indegreeMap(targetNode.id) -= 1
+
+        writeNode(targetNode)
+
+        if(indegreeMap(targetNode.id) == 0) {
+          queue :+= targetNode
+          indegreeMap.remove(targetNode.id)
+        }
+      }
+    }
+
+    if(indegreeMap.nonEmpty) {
+      LOGGER.warn("Still elements in `indegreeMap`, graph is not acyclic.")
+    }
+  }
+
+  private def writeNode(node: BuilderNode): Unit = {
+    val nodeLen = zoomWriter.storeNode(
+      node.id,
+      node.name,
+      node.layer,
+      node.content,
+      node.incoming,
+      node.outgoing,
+      node.options,
+      node.genomes)
+
+    indexer.indexNode(node.id, nodeLen, node.layer)
+    heatMapWriter.incrementLayerAt(node.layer)
   }
 
   /**
@@ -219,7 +318,6 @@ class ZeroZoomBuilder(paths: GraphPathCollection) {
     * such a [[Node]].
     */
   def flush(): Unit = {
-    registerCurrentNode()
     if (zoomWriter.getFileLength == 0) {
       close()
       throw EmptyGraphException(paths.zeroFilePath + " contains no segments.",
@@ -267,6 +365,9 @@ object ZeroZoomBuilder {
     val reader = new BufferedReader(new FileReader(paths.gfaPath.toString))
     try {
       Gfa1Parser.parse(reader, builder, observer, size)
+      builder.assignLayers()
+      builder.assignGenomes()
+      builder.writeIndex()
     } catch {
       case any: Any => any.printStackTrace()
     } finally {

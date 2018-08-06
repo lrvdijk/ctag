@@ -238,7 +238,7 @@ class CtagWriter(filePath: Path) extends AutoCloseable {
     * to it and clears the byte buffer afterwards.
     */
   def flushBuffer(): Unit =
-    if (buf.position > 0) {
+    if (buf.position() > 0) {
       buf.flip()
       writeChannel.write(buf)
 
@@ -251,7 +251,7 @@ class CtagWriter(filePath: Path) extends AutoCloseable {
     *
     * @return The length of the compressed file in bytes.
     */
-  def getFileLength: Long = writeFile.length() + buf.position
+  def getFileLength: Long = writeFile.length() + buf.position()
 
   /**
     * Clears the parsed graph file.
@@ -274,7 +274,7 @@ class CtagWriter(filePath: Path) extends AutoCloseable {
     * @param len The potential new length of the buffer.
     */
   private def expandBuffer(len: Int): Unit = {
-    if (buf.position + len > BUFF_SIZE) {
+    if (buf.position() + len > BUFF_SIZE) {
       flushBuffer()
       if (len > BUFF_SIZE) {
         buf = ByteBuffer.allocateDirect(len)

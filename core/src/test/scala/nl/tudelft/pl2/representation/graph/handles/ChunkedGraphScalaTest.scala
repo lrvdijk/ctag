@@ -10,6 +10,7 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
 import scala.collection.mutable
+import scala.collection.mutable.Map
 
 @RunWith(classOf[JUnitRunner])
 class ChunkedGraphScalaTest extends FunSuite {
@@ -35,10 +36,9 @@ class ChunkedGraphScalaTest extends FunSuite {
     val key = "ORI"
     val value = "sample"
 
-    val mutableOptions: mutable.Map[String, (Char, String)] =
+    val options: mutable.Map[String, (Char, String)] =
       mutable.HashMap()
-    mutableOptions.put(key, ('z', value))
-    val options = mutableOptions.toMap
+    options.put(key, ('z', value))
     //scalastyle:off null
     val node = new Node(0, "1", 0, "ACT", null, null, options, null)
     //scalastyle:on null
@@ -56,10 +56,9 @@ class ChunkedGraphScalaTest extends FunSuite {
     val valueString = "sample"
     val valueNumber = "0"
 
-    val mutableOptions: mutable.Map[String, (Char, String)] =
+    val options: mutable.Map[String, (Char, String)] =
       mutable.HashMap()
-    mutableOptions.put(key, ('z', valueNumber))
-    val options = mutableOptions.toMap
+    options.put(key, ('z', valueNumber))
     //scalastyle:off null
     val node = new Node(0, "1", 0, "ACT", null, null, options, null)
     //scalastyle:on null
@@ -81,10 +80,9 @@ class ChunkedGraphScalaTest extends FunSuite {
     val valueNumber = "0"
     val valueNumber2 = "1"
 
-    val mutableOptions: mutable.Map[String, (Char, String)] =
+    val options: mutable.Map[String, (Char, String)] =
       mutable.HashMap()
-    mutableOptions.put(key, ('z', valueNumber2))
-    val options = mutableOptions.toMap
+    options.put(key, ('z', valueNumber2))
     //scalastyle:off null
     val node = new Node(0, "1", 0, "ACT", null, null, options, null)
     //scalastyle:on null

@@ -50,7 +50,7 @@ class TwoZoomBuilder(paths: GraphPathCollection) extends ZoomBuilder with ZoomBu
       val outEdges = root.outgoing
 
       if (outEdges.size == 1) {
-        val midsOpts = Map[String, (Char, String)]()
+        val midsOpts = mutable.Map[String, (Char, String)]()
         val midID = outEdges.head
 
 
@@ -65,7 +65,7 @@ class TwoZoomBuilder(paths: GraphPathCollection) extends ZoomBuilder with ZoomBu
           expandNodeDataMapsByID(nextMidID, this)
           nodeDataByID.remove(mid.id)
           nodeDataByLayer.removeBinding(mid.layer, mid.id)
-          midsOpts ++ mid.options
+          midsOpts ++= mid.options
           mid = nodeDataByID(nextMidID)
 
         }

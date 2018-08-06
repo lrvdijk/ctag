@@ -10,6 +10,7 @@ import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.scalatest.junit.JUnitRunner
 
 import scala.collection.mutable
+import scala.collection.mutable.Map;
 
 //scalastyle:off underscore.import
 import org.scalatest.Matchers._
@@ -37,8 +38,8 @@ class ZeroZoomReaderTest extends FunSuite with BeforeAndAfter {
       "content",
       mutable.Buffer(),
       mutable.Buffer(),
-      Map(),
-      Map())
+      mutable.Map(),
+      mutable.Map())
     writer.close()
     reader.readDataChunk(0,
       RWC.CHAR_BYTES
@@ -52,8 +53,8 @@ class ZeroZoomReaderTest extends FunSuite with BeforeAndAfter {
           "content",
           mutable.ListBuffer(),
           mutable.ListBuffer(),
-          Map(),
-          Map()))
+          mutable.Map(),
+          mutable.Map()))
     }
   }
   test("Store one node with options and no links and read") {
@@ -63,8 +64,8 @@ class ZeroZoomReaderTest extends FunSuite with BeforeAndAfter {
       "content",
       mutable.Buffer(),
       mutable.Buffer(),
-      Map("A1" -> ('B', "C1"), "A2" -> ('B', "C2")),
-      Map())
+      mutable.Map("A1" -> ('B', "C1"), "A2" -> ('B', "C2")),
+      mutable.Map())
     writer.close()
 
     val chunk = reader.readDataChunk(0,
@@ -72,7 +73,7 @@ class ZeroZoomReaderTest extends FunSuite with BeforeAndAfter {
         + RWC.N_SHORT_FIELDS * RWC.SHORT_BYTES
         + RWC.N_INT_FIELDS * RWC.INT_BYTES
         + "name".length + "content".length
-        + RWM.optionLength(Map("A1" -> ('B', "C1"), "A2" -> ('B', "C2"))))
+        + RWM.optionLength(mutable.Map("A1" -> ('B', "C1"), "A2" -> ('B', "C2"))))
 
     chunk.head.id should be {
       1

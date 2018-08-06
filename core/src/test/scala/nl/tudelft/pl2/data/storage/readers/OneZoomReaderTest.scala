@@ -42,8 +42,8 @@ class OneZoomReaderTest extends FunSuite with BeforeAndAfter {
       "content",
       mutable.Buffer(),
       mutable.Buffer(),
-      Map(),
-      Map())
+      mutable.Map(),
+      mutable.Map())
     writer.close()
     val chunk = reader.readDataChunk(0,
       RWC.CHAR_BYTES
@@ -58,8 +58,8 @@ class OneZoomReaderTest extends FunSuite with BeforeAndAfter {
           "content",
           mutable.ListBuffer(),
           mutable.ListBuffer(),
-          Map(),
-          Map()))
+          mutable.Map(),
+          mutable.Map()))
     }
   }
 
@@ -69,7 +69,7 @@ class OneZoomReaderTest extends FunSuite with BeforeAndAfter {
       "name",
       "content",
       ('1', '2'),
-      Map(),
+      mutable.Map(),
       ListBuffer(),
       END)
     writer.close()
@@ -87,7 +87,7 @@ class OneZoomReaderTest extends FunSuite with BeforeAndAfter {
           "content",
           '1', '2',
           ListBuffer(),
-          Map(),
+          mutable.Map(),
           END))
     }
   }
@@ -98,7 +98,7 @@ class OneZoomReaderTest extends FunSuite with BeforeAndAfter {
       "name",
       "content",
       "content",
-      Map(),
+      mutable.Map(),
       ListBuffer(),
       END)
     writer.close()
@@ -116,7 +116,7 @@ class OneZoomReaderTest extends FunSuite with BeforeAndAfter {
           "content",
           "content",
           ListBuffer(),
-          Map(),
+          mutable.Map(),
           END))
     }
   }

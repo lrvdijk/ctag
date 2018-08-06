@@ -40,8 +40,8 @@ class TwoZoomReaderTest extends FunSuite with BeforeAndAfter {
       "content",
       mutable.Buffer(),
       mutable.Buffer(),
-      Map(),
-      Map())
+      mutable.Map(),
+      mutable.Map())
     writer.close()
     val chunk = reader.readDataChunk(0,
       RWC.CHAR_BYTES
@@ -56,15 +56,15 @@ class TwoZoomReaderTest extends FunSuite with BeforeAndAfter {
           "content",
           mutable.ListBuffer(),
           mutable.ListBuffer(),
-          Map(),
-          Map()))
+          mutable.Map(),
+          mutable.Map()))
     }
   }
 
   test("Store one chain with no options and read") {
     val chainLen = writer.storeChain(1,
       1,
-      Map(),
+      mutable.Map(),
       ListBuffer(),
       0)
     writer.close()
@@ -76,7 +76,7 @@ class TwoZoomReaderTest extends FunSuite with BeforeAndAfter {
       mutable.Buffer(Chain(1, 1,
         ListBuffer(),
         ListBuffer(Edge(1, 0)),
-        Map()))
+        mutable.Map()))
     }
   }
 

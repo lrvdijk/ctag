@@ -245,13 +245,14 @@ class DrawableNode extends DrawableAbstractNode {
      */
     private void drawTraitMap(final TraitMap traitMap,
                               final GraphicsContext gc) {
-        Map<Integer, Object> genomeIndexes = JavaConverters
-                .mapAsJavaMap(getNode().genomeCoordinates());
+        Map<Object, Object> genomeIndexes =
+                JavaConverters.mutableMapAsJavaMap(
+                getNode().genomeCoordinates());
 
         int[] counter = new int[]{0};
 
         genomeIndexes.forEach((index, coordinate) -> {
-            String genome = UIHelper.getGraph().getGenomes()[index];
+            String genome = UIHelper.getGraph().getGenomes()[(int) index];
 
             Option<IntervalTreeMap<Long, Tuple2<Landmark, Trait>>> map =
                     traitMap.get(genome);

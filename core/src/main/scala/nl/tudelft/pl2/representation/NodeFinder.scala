@@ -7,6 +7,7 @@ import nl.tudelft.pl2.representation.external.components.DummyNode
 import nl.tudelft.pl2.representation.graph.GraphHandle
 import nl.tudelft.pl2.representation.ui.UIHelper
 
+import scala.collection.mutable
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
 /**
@@ -67,9 +68,9 @@ class NodeFinder {
       (index) => cache.retrieveNodeByID(index)
     )
     val options: Graph.Options =
-      nodes.flatMap(_.options).toMap
+      mutable.Map(nodes.flatMap(_.options): _*)
     val coordinates: Graph.Coordinates =
-      nodes.flatMap(_.genomeCoordinates).toMap
+      mutable.Map(nodes.flatMap(_.genomeCoordinates): _*)
     new Node(root.id,
       String.join(",", nodes.map(_.name).toList.asJava),
       nodes.map(_.layer).min,

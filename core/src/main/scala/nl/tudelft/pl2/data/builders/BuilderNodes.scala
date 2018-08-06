@@ -19,11 +19,16 @@ import scala.collection.mutable
   */
 class BuilderNode(val id: Int,
                   val name: String,
-                  val layer: Int,
-                  val content: String,
+                  // Mutable because this will be determined after we
+                  // obtain all edges for this node
+                  var layer: Int,
+                  // Mutable because it's possible that an Edge references
+                  // a node before it's actually defined, so the data may be
+                  // updated later.
+                  var content: String,
                   val incoming: mutable.Buffer[Int],
                   val outgoing: mutable.Buffer[Int],
-                  val options: Options,
+                  var options: Options,
                   val genomes: Coordinates) {
   def nodify(): Node = new Node(id,
     name,
@@ -35,14 +40,14 @@ class BuilderNode(val id: Int,
     genomes)
 }
 
-case class BuilderBubble(override val id: Int,
-                         override val name: String,
-                         override val layer: Int,
-                         override val content: String,
-                         cHi: Char, cLo: Char,
-                         override val options: Options,
-                         override val incoming: mutable.Buffer[Int],
-                         end: Int)
+class BuilderBubble(id: Int,
+                    name: String,
+                    layer: Int,
+                    content: String,
+                    val cHi: Char, val cLo: Char,
+                    options: Options,
+                    incoming: mutable.Buffer[Int],
+                    val end: Int)
   extends BuilderNode(id,
     name,
     layer,
@@ -50,7 +55,7 @@ case class BuilderBubble(override val id: Int,
     incoming,
     mutable.Buffer[Int](end),
     options,
-    Map()) {
+    mutable.Map()) {
   override def nodify(): Node = Bubble(id,
     name,
     layer,
@@ -62,14 +67,14 @@ case class BuilderBubble(override val id: Int,
     end)
 }
 
-case class BuilderIndel(override val id: Int,
-                        override val name: String,
-                        override val layer: Int,
-                        override val content: String,
-                        midContent: String,
-                        override val options: Options,
-                        override val incoming: mutable.Buffer[Int],
-                        end: Int)
+class BuilderIndel(id: Int,
+                   name: String,
+                   layer: Int,
+                   content: String,
+                   val midContent: String,
+                   options: Options,
+                   incoming: mutable.Buffer[Int],
+                   val end: Int)
   extends BuilderNode(id,
     name,
     layer,
@@ -77,7 +82,7 @@ case class BuilderIndel(override val id: Int,
     incoming,
     mutable.Buffer[Int](end),
     options,
-    Map()) {
+    mutable.Map()) {
   override def nodify(): Indel = Indel(id,
     name,
     layer,
@@ -88,11 +93,11 @@ case class BuilderIndel(override val id: Int,
     end)
 }
 
-case class BuilderChain(override val id: Int,
-                        override val layer: Int,
-                        override val options: Options,
-                        override val incoming: mutable.Buffer[Int],
-                        override val outgoing: mutable.Buffer[Int])
+class BuilderChain(id: Int,
+                   layer: Int,
+                   options: Options,
+                   incoming: mutable.Buffer[Int],
+                   outgoing: mutable.Buffer[Int])
   extends BuilderNode(id,
     "",
     layer,
@@ -100,7 +105,7 @@ case class BuilderChain(override val id: Int,
     incoming,
     outgoing,
     options,
-    Map()) {
+    mutable.Map()) {
   override def nodify(): Chain = Chain(id,
     layer,
     incoming.map(i => Edge(i, id)),

@@ -139,9 +139,9 @@ object ReadWriteMethods {
         i += optLen
       }
       //scalastyle:on while
-      optMap.toMap
+      optMap
     } else {
-      Map[String, (Char, String)]()
+      mutable.Map[String, (Char, String)]()
     }
   }
 

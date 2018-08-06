@@ -66,8 +66,8 @@ class MasterCacheTest extends FunSuite with BeforeAndAfter {
       node should be {
         new Node(1, "44", 1, "A",
           mutable.ListBuffer(Edge(1, 3)),
-          mutable.ListBuffer(), Map("START" -> ('Z', "20217")),
-          Map())
+          mutable.ListBuffer(), mutable.Map("START" -> ('Z', "20217")),
+          mutable.Map())
       }
     } finally {
       MasterCacheLoader.unload(cache)
@@ -156,7 +156,7 @@ class MasterCacheTest extends FunSuite with BeforeAndAfter {
         Bubble(
           0, "name", 0, "content", 'A', 'T',
           ListBuffer[Edge](),
-          Map("START" -> ('Z', "0"), "START" -> ('Z', "1")),
+          mutable.Map("START" -> ('Z', "0"), "START" -> ('Z', "1")),
           3)
       }
     } finally {
@@ -177,7 +177,7 @@ class MasterCacheTest extends FunSuite with BeforeAndAfter {
       bub should be {
         Bubble(1, "2", 1, "A", 'T', 'C',
           ListBuffer(Edge(0, 1)),
-          Map("START" -> ('Z', "1553")),
+          mutable.Map("START" -> ('Z', "1553")),
           end)
       }
     } finally {
@@ -198,7 +198,7 @@ class MasterCacheTest extends FunSuite with BeforeAndAfter {
         Indel(0, "name",
           0, "content", "A",
           ListBuffer[Edge](),
-          Map("START" -> ('Z', "0"), "START" -> ('Z', "1")),
+          mutable.Map("START" -> ('Z', "0"), "START" -> ('Z', "1")),
           2)
       }
     } finally {

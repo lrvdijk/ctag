@@ -141,7 +141,7 @@ case class Bubble(override val id: Int,
   incoming,
   mutable.Buffer(Edge(id, end)),
   options,
-  Map()) {
+  mutable.Map()) {
 
   override def equals(obj: Any): Boolean =
     obj.isInstanceOf[Bubble] && super.equals(obj)
@@ -162,7 +162,7 @@ case class Indel(override val id: Int,
   incoming,
   mutable.Buffer(Edge(id, end)),
   options,
-  Map()) {
+  mutable.Map()) {
   override def equals(obj: Any): Boolean =
     obj.isInstanceOf[Indel] && super.equals(obj)
 }
@@ -178,7 +178,7 @@ case class Chain(override val id: Int,
   incoming,
   outgoing,
   options,
-  Map()) {
+  mutable.Map()) {
   override def equals(obj: Any): Boolean =
     obj.isInstanceOf[Chain] && super.equals(obj)
 }

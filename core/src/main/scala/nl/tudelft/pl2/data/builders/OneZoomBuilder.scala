@@ -217,7 +217,7 @@ class OneZoomBuilder(paths: GraphPathCollection) extends ZoomBuilder with ZoomBu
   def registerIndel(root: BuilderNode, mid: BuilderNode, end: BuilderNode): Unit = {
     val indelLen = currLvlWriter.storeIndel(root.id, root.layer, root.name,
       root.content, mid.content,
-      mergeOptions(root.options, mid.options, Map()),
+      mergeOptions(root.options, mid.options, mutable.Map()),
       root.incoming, end.id)
     indexer.indexNode(root.id, indelLen, root.layer)
 

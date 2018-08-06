@@ -65,7 +65,7 @@ class Indexer(indexPath: Path) {
   /**
     * The number of nodes in the current [[IndexChunk]].
     */
-  private final var chunkNumOfSegs = 0
+  private final var chunkNumberOfSeqs = 0
 
   /**
     * Adds the [[Node]] to an [[IndexChunk]].
@@ -75,7 +75,7 @@ class Indexer(indexPath: Path) {
     * @param layer  The layer of the [[Node]].
     */
   def indexNode(id: Int, length: Int, layer: Int): Unit = {
-    chunkNumOfSegs += 1
+    chunkNumberOfSeqs += 1
     chunkLength += length
     if (layer < chunkMinLayer) {
       chunkMinLayer = layer
@@ -90,7 +90,7 @@ class Indexer(indexPath: Path) {
       chunkMaxNodeID = id
     }
 
-    if (chunkNumOfSegs >= MAX_NODES) {
+    if (chunkNumberOfSeqs >= MAX_NODES) {
       val indexedChunk =
         IndexChunk(chunkIndex, chunkLength, chunkOffset,
           (chunkMinLayer, chunkMaxLayer),
@@ -104,7 +104,7 @@ class Indexer(indexPath: Path) {
       chunkMaxLayer = -1
       chunkMinNodeID = Int.MaxValue
       chunkMaxNodeID = -1
-      chunkNumOfSegs = 0
+      chunkNumberOfSeqs = 0
     }
   }
 
@@ -113,7 +113,7 @@ class Indexer(indexPath: Path) {
     * any remaining [[IndexChunk]]s to disk.
     */
   def flush(): Unit = {
-    if (chunkNumOfSegs > 0) {
+    if (chunkNumberOfSeqs > 0) {
       val indexedChunk =
         IndexChunk(chunkIndex, chunkLength, chunkOffset,
           (chunkMinLayer, chunkMaxLayer),

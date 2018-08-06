@@ -15,6 +15,8 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.prop.PropertyChecks.forAll
 import org.scalatest.prop.TableDrivenPropertyChecks.Table
 
+import scala.collection.mutable
+
 object Gfa1ParserTest {
   private val observer = new Observer {
     override def update(o: Observable, arg: scala.Any): Unit = Unit
@@ -117,12 +119,12 @@ class Gfa1ParserTest extends FunSuite {
     */
   private val headers = Table(
     ("in", "calls"),
-    (s"H\t${OPT1._1}", List(Map(OPT1._2))),
-    (s"H\t${OPT2._1}", List(Map(OPT2._2))),
-    (s"H\t${OPT1._1}\nH\t${OPT2._1}", List(Map(OPT1._2), Map(OPT2._2))),
-    (s"H\t${OPT1._1}\t${OPT2._1}", List(Map(OPT1._2, OPT2._2))),
+    (s"H\t${OPT1._1}", List(mutable.Map(OPT1._2))),
+    (s"H\t${OPT2._1}", List(mutable.Map(OPT2._2))),
+    (s"H\t${OPT1._1}\nH\t${OPT2._1}", List(mutable.Map(OPT1._2), mutable.Map(OPT2._2))),
+    (s"H\t${OPT1._1}\t${OPT2._1}", List(mutable.Map(OPT1._2, OPT2._2))),
     (s"H\t${OPT2._1}\t${OPT1._1}\nH\t${OPT3._1}",
-      List(Map(OPT2._2, OPT1._2), Map(OPT3._2)))
+      List(mutable.Map(OPT2._2, OPT1._2), mutable.Map(OPT3._2)))
   )
 
   /**
@@ -130,16 +132,16 @@ class Gfa1ParserTest extends FunSuite {
     * that should create and register
     * [[nl.tudelft.pl2.representation.external.Node]]s.
     */
-  private val segments = Table[String, List[(String, String, Map[String, (Char, String)])]](
+  private val segments = Table[String, List[(String, String, mutable.Map[String, (Char, String)])]](
     ("in", "calls"),
-    (s"S\t$NAME1\t$CONT1\t*\t${OPT1._1}",
-      List((NAME1, CONT1, Map(OPT1._2)))),
-    (s"S\t$NAME2\t$CONT2\t*\t${OPT2._1}\t${OPT1._1}",
-      List((NAME2, CONT2, Map(OPT2._2, OPT1._2)))),
-    (s"S\t$NAME1\t$CONT2\t*",
-      List((NAME1, CONT2, Map()))),
-    (s"S\t$NAME1\t$CONT1\t*\nS\t$NAME2\t$CONT1\t*",
-      List((NAME1, CONT1, Map()), (NAME2, CONT1, Map())))
+    (s"S\t$NAME1\t$CONT1\t${OPT1._1}",
+      List((NAME1, CONT1, mutable.Map(OPT1._2)))),
+    (s"S\t$NAME2\t$CONT2\t${OPT2._1}\t${OPT1._1}",
+      List((NAME2, CONT2, mutable.Map(OPT2._2, OPT1._2)))),
+    (s"S\t$NAME1\t$CONT2",
+      List((NAME1, CONT2, mutable.Map()))),
+    (s"S\t$NAME1\t$CONT1\nS\t$NAME2\t$CONT1",
+      List((NAME1, CONT1, mutable.Map()), (NAME2, CONT1, mutable.Map())))
   )
 
   /**
@@ -148,16 +150,16 @@ class Gfa1ParserTest extends FunSuite {
     * [[nl.tudelft.pl2.representation.external.Edge]]s.
     */
   private val links = Table[String,
-    List[(String, Boolean, String, Boolean, Map[String, (Char, String)])]
+    List[(String, Boolean, String, Boolean, mutable.Map[String, (Char, String)])]
     ](
     ("in", "calls"),
     (s"L\t$NAME1\t+\t$NAME2\t-\t0M\t${OPT1._1}",
-      List((NAME1, false, NAME2, true, Map(OPT1._2)))),
+      List((NAME1, false, NAME2, true, mutable.Map(OPT1._2)))),
     (s"L\t$NAME1\t-\t$NAME2\t+\t0M\t${OPT1._1}",
-      List((NAME1, true, NAME2, false, Map(OPT1._2)))),
+      List((NAME1, true, NAME2, false, mutable.Map(OPT1._2)))),
     (s"L\t$NAME1\t+\t$NAME2\t+\t0M\nL\t$NAME1\t-\t$NAME2\t-\t0M",
-      List((NAME1, false, NAME2, false, Map()),
-        (NAME1, true, NAME2, true, Map())))
+      List((NAME1, false, NAME2, false, mutable.Map()),
+        (NAME1, true, NAME2, true, mutable.Map())))
   )
 
   /**
@@ -199,36 +201,9 @@ class Gfa1ParserTest extends FunSuite {
     * Simple comment line test.
     */
   test("Comment lines should be ignored") {
-    parseShouldVerify("S\tb\tGCT\t*\n#\tsome comment here", mc =>
-      verify(mc, only).registerNode("b", "GCT", Map()))
+    parseShouldVerify("S\tb\tGCT\n#\tsome comment here", mc =>
+      verify(mc, only).registerNode("b", "GCT", mutable.Map()))
   }
-
-  /**
-    * Simple test to ensure exclusion of containments.
-    */
-  test("Containment lines should not be parsed") {
-    a[Gfa1ParseException] should be thrownBy {
-      parseShouldVerify("C\tname\t+\tname2\t-\t0\t0M", _ => {})
-    }
-  }
-
-  /**
-    * Simple test to ensure exclusion of paths.
-    */
-  test("Path lines should not be parsed") {
-    a[Gfa1ParseException] should be thrownBy {
-      parseShouldVerify("P\tname\tnames\t0M", _ => {})
-    }
-  }
-
-
-  // Tests to ensure invalid strings generate an exception.
-  test("Segment parsing - too little arguments") {
-    a[Gfa1ParseException] should be thrownBy {
-      justParse("S\tname\tTCG")
-    }
-  }
-
 
   test("Link parsing - too little arguments") {
     a[Gfa1ParseException] should be thrownBy {

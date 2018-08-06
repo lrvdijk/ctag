@@ -8,6 +8,7 @@ import org.scalatest.junit.JUnitRunner
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.Map
 
 //scalastyle:off underscore.import
 import org.scalatest.Matchers._

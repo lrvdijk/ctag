@@ -5,6 +5,7 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
 import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.Map
 
 /**
   * Class for testing hash code methods of the Segment and Link classes.

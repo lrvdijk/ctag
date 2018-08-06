@@ -5,7 +5,7 @@ import nl.tudelft.pl2.representation.external.Indel;
 import nl.tudelft.pl2.representation.external.Node;
 import nl.tudelft.pl2.representation.graph.GraphHandle;
 import nl.tudelft.pl2.representation.ui.UIHelper;
-import scala.collection.immutable.HashMap;
+import scala.collection.mutable.HashMap;
 import scala.collection.mutable.ListBuffer;
 
 /**

@@ -130,13 +130,14 @@ class CtagReader(filePath: Path) extends AutoCloseable {
           + RWC.INT_BYTES * inLinkNum
           + RWC.INT_BYTES * outLinkNum))
 
-    val genomeCoordinates = arr.slice(RWC.N_NAME_POS + nameLen + contentLen + optLen
+    val genomeCoordinates_slice = arr.slice(RWC.N_NAME_POS + nameLen + contentLen + optLen
       + RWC.INT_BYTES * inLinkNum + RWC.INT_BYTES * outLinkNum, RWC.N_NAME_POS
       + nameLen + contentLen + optLen + RWC.INT_BYTES * inLinkNum + RWC.INT_BYTES
       * outLinkNum + (RWC.INT_BYTES + RWC.LONG_BYTES) * numGenomes)
       .grouped(RWC.INT_BYTES + RWC.LONG_BYTES).map(genomeArr =>
-      (new Integer(ByteBuffer.wrap(genomeArr.slice(0, RWC.INT_BYTES)).getInt),
-        ByteBuffer.wrap(genomeArr.slice(RWC.INT_BYTES, genomeArr.length)).getLong)).toMap
+      (ByteBuffer.wrap(genomeArr.slice(0, RWC.INT_BYTES)).getInt,
+        ByteBuffer.wrap(genomeArr.slice(RWC.INT_BYTES, genomeArr.length)).getLong))
+    val genomeCoordinates = mutable.Map[Int, Long](genomeCoordinates_slice.toSeq: _*)
 
     new BuilderNode(id, name, layer, content, incomingIDs, outgoingIDs, options, genomeCoordinates)
   }
@@ -174,7 +175,7 @@ class CtagReader(filePath: Path) extends AutoCloseable {
       contentLen + optLen,
       RWC.B_NAME_POS + nameLen + contentLen + optLen + RWC.INT_BYTES * inLinkNum))
 
-    BuilderBubble(id, name, layer, content, cHi, cLo, options, inEdges, end)
+    new BuilderBubble(id, name, layer, content, cHi, cLo, options, inEdges, end)
   }
 
   /**
@@ -212,7 +213,7 @@ class CtagReader(filePath: Path) extends AutoCloseable {
       arr.slice(RWC.I_NAME_POS + nameLen + contentLen + midContentLen + optLen,
         RWC.I_NAME_POS + nameLen + contentLen + midContentLen + optLen + RWC.INT_BYTES * inLinkNum))
 
-    BuilderIndel(id, name, layer, content, midContent, options, inLinks, end)
+    new BuilderIndel(id, name, layer, content, midContent, options, inLinks, end)
   }
 
   /**
@@ -236,7 +237,7 @@ class CtagReader(filePath: Path) extends AutoCloseable {
     val inEdges = RWM.buildEdgeIDs(arr.slice(RWC.C_OPT_POS + optLen,
       RWC.C_OPT_POS + optLen + RWC.INT_BYTES * inLinkNum))
 
-    BuilderChain(id, layer, options, inEdges, mutable.Buffer(end))
+    new BuilderChain(id, layer, options, inEdges, mutable.Buffer(end))
   }
 
   def close(): Unit = {
